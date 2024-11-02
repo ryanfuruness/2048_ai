@@ -8,16 +8,18 @@ class Game2048:
 
     def __init__(self):
         """
-        Initialize a new game by resetting the board.
+        Initialize a new game by resetting the board and score.
         """
         self.board = 0
+        self.score = 0
         self.reset()
 
     def reset(self):
         """
-        Reset the game to the initial state with two tiles spawned.
+        Reset the game to the initial state with two tiles spawned and score set to zero.
         """
         self.board = 0
+        self.score = 0
         self.spawn_tile()
         self.spawn_tile()
 
@@ -121,6 +123,8 @@ class Game2048:
                 # Merge tiles by increasing exponent, cap at 15
                 merged_exponent = min(new_line[i] + 1, 15)
                 merged_line.append(merged_exponent)
+                # Update score
+                self.score += 2 ** merged_exponent
                 skip = True  # Skip next tile as it's merged
             else:
                 merged_line.append(new_line[i])

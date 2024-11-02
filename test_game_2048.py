@@ -16,6 +16,8 @@ class TestGame2048(unittest.TestCase):
         self.assertEqual(len(non_zero_tiles), 2)
         for tile in non_zero_tiles:
             self.assertIn(tile, [2, 4])
+        # Score should be zero at the start
+        self.assertEqual(self.game.score, 0)
 
     def test_get_set_cell(self):
         # Test the get_cell and set_cell methods
@@ -29,6 +31,7 @@ class TestGame2048(unittest.TestCase):
     def test_move_left(self):
         # Test moving tiles to the left and merging
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # Board before move:
         # [2, 2, 0, 0]
@@ -61,10 +64,14 @@ class TestGame2048(unittest.TestCase):
             self.assertEqual(exponent, expected_exponent)
 
         self.assertTrue(moved)
+        # Check score: 4 (merge of two '2's) + 8 (merge of two '4's) + 4 + 4 (two merges of '2's)
+        expected_score = 4 + 8 + 4 + 4  # Total score: 20
+        self.assertEqual(self.game.score, expected_score)
 
     def test_move_right_no_move(self):
         # Test moving right when no tiles can move or merge
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # [0, 0, 0, 2]
         initial_tiles = [(3, 1)]
@@ -76,10 +83,13 @@ class TestGame2048(unittest.TestCase):
         exponent = self.game.get_cell(3)
         self.assertEqual(exponent, 1)
         self.assertFalse(moved)
+        # Score should remain zero
+        self.assertEqual(self.game.score, 0)
 
     def test_move_up(self):
         # Test moving tiles up and merging
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # [2, 0, 0, 0]
         # [2, 0, 0, 0]
@@ -108,10 +118,14 @@ class TestGame2048(unittest.TestCase):
             self.assertEqual(exponent, expected_exponent)
 
         self.assertTrue(moved)
+        # Check score: 4 (merge of two '2's) + 8 (merge of two '4's)
+        expected_score = 4 + 8  # Total score: 12
+        self.assertEqual(self.game.score, expected_score)
 
     def test_move_down(self):
         # Test moving tiles down and merging
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # [0, 0, 0, 0]
         # [0, 0, 0, 0]
@@ -138,10 +152,14 @@ class TestGame2048(unittest.TestCase):
             self.assertEqual(exponent, expected_exponent)
 
         self.assertTrue(moved)
+        # Check score: 4 (merge of two '2's)
+        expected_score = 4
+        self.assertEqual(self.game.score, expected_score)
 
     def test_no_move_possible(self):
         # Test that no move is possible and game detects game over
         self.game.board = 0
+        self.game.score = 0
         # Fill the board with exponents where no adjacent tiles can merge
         exponents = [1, 2, 3, 4,
                      2, 3, 4, 5,
@@ -151,16 +169,21 @@ class TestGame2048(unittest.TestCase):
             self.game.set_cell(i, exponents[i])
 
         self.assertTrue(self.game.is_game_over())
+        # Score should remain zero as no moves have been made
+        self.assertEqual(self.game.score, 0)
 
     def test_game_not_over(self):
         # Test that the game is not over when moves are possible
         self.game.board = 0
+        self.game.score = 0
         # Fill the board with tiles that can merge
         exponents = [1, 1, 2, 2] * 4
         for i in range(16):
             self.game.set_cell(i, exponents[i])
 
         self.assertFalse(self.game.is_game_over())
+        # Score should remain zero
+        self.assertEqual(self.game.score, 0)
 
     def test_invalid_move_direction(self):
         # Test that an invalid move direction raises ValueError
@@ -170,6 +193,7 @@ class TestGame2048(unittest.TestCase):
     def test_merge_once_per_move(self):
         # Tiles should only merge once per move
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # [2, 2, 2, 2]
         initial_tiles = [(0, 1), (1, 1), (2, 1), (3, 1)]
@@ -189,10 +213,14 @@ class TestGame2048(unittest.TestCase):
             self.assertEqual(exponent, expected_exponent)
 
         self.assertTrue(moved)
+        # Check score: 4 + 4 = 8
+        expected_score = 4 + 4
+        self.assertEqual(self.game.score, expected_score)
 
     def test_spawn_tile_after_move(self):
         # Test that a new tile is spawned after a successful move
         initial_board = self.game.board
+        initial_score = self.game.score
         moved = self.game.move('left')
         new_board = self.game.board
         self.assertNotEqual(initial_board, new_board)
@@ -202,10 +230,13 @@ class TestGame2048(unittest.TestCase):
         initial_tiles = sum(1 for i in range(16) if (initial_board >> (i * 4)) & 0xF)
         new_tiles = sum(1 for i in range(16) if (new_board >> (i * 4)) & 0xF)
         self.assertEqual(new_tiles, initial_tiles + 1)
+        # Score should not decrease
+        self.assertGreaterEqual(self.game.score, initial_score)
 
     def test_move_with_no_effect(self):
         # Test moving when there is no possible move in that direction
         self.game.board = 0
+        self.game.score = 0
         # Set up a specific board state
         # [0, 0, 0, 2]
         initial_tiles = [(3, 1)]
@@ -218,6 +249,8 @@ class TestGame2048(unittest.TestCase):
 
         self.assertFalse(moved)
         self.assertEqual(initial_board, new_board)
+        # Score should remain zero
+        self.assertEqual(self.game.score, 0)
 
     def test_process_line(self):
         # Test the internal method process_line
@@ -259,20 +292,28 @@ class TestGame2048(unittest.TestCase):
     def test_large_exponents(self):
         # Test handling of large exponents (e.g., reaching 2048 tile)
         self.game.board = 0
+        self.game.score = 0
         self.game.set_cell(0, 10)  # Exponent 10 -> Value 1024
         self.game.set_cell(1, 10)  # Exponent 10 -> Value 1024
         self.game.move('left', spawn_tile=False)
         exponent = self.game.get_cell(0)
         self.assertEqual(exponent, 11)  # Exponent 11 -> Value 2048
+        # Score should increase by 2048
+        self.assertEqual(self.game.score, 2048)
 
     def test_overflow_exponent(self):
         # Test that exponents do not overflow beyond 15 (maximum 4 bits)
         self.game.board = 0
+        self.game.score = 0
         self.game.set_cell(0, 15)  # Exponent 15 is the maximum representable
         self.game.set_cell(1, 15)
         self.game.move('left', spawn_tile=False)
         exponent = self.game.get_cell(0)
         self.assertEqual(exponent, 15)  # Should remain at maximum value
+        # Score should increase by 2^15 (32768)
+        self.assertEqual(self.game.score, 32768)
+
+    # Additional test cases can be added here to further test score tracking
 
 if __name__ == '__main__':
     unittest.main()
